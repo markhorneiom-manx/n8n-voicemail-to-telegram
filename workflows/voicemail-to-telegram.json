@@ -1,0 +1,184 @@
+{
+  "name": "Voicemail to Telegram (demo copy)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voicemail-demo",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "a1f0c5d2-0001-4b6e-9a10-000000000001",
+      "name": "Voicemail webhook (from relay)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "5b0d7a1e-0001-4c11-8f00-000000000001"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pull the useful fields out of an ElevenLabs post-call payload and build the Telegram text.\n// Anything that is not an inbound transcription event is dropped quietly\n// (outbound calls from other agents share the same webhook, so they are filtered out here).\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst out = [];\n\nfor (const item of $input.all()) {\n  const body = item.json.body ?? item.json;\n  if (body.type !== 'post_call_transcription') continue;\n\n  const d = body.data ?? {};\n  if ((d.metadata?.phone_call?.direction ?? 'inbound') !== 'inbound') continue;\n  const dc = d.analysis?.data_collection_results ?? {};\n  const val = (k) => {\n    const v = dc[k]?.value;\n    return v === undefined || v === null || String(v).trim() === '' ? 'not given' : String(v).trim();\n  };\n\n  const caller = val('caller_name');\n  const company = val('company');\n  const callback = val('callback_number');\n  const reason = val('reason');\n  const urgency = val('urgency');\n  const outcome = val('outcome');\n  const secs = d.metadata?.call_duration_secs ?? 0;\n  const started = d.metadata?.start_time_unix_secs\n    ? new Date(d.metadata.start_time_unix_secs * 1000).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' })\n    : 'unknown time';\n  const summary = d.analysis?.transcript_summary ?? 'No summary supplied.';\n\n  const headline = outcome === 'message_taken'\n    ? 'New voicemail'\n    : 'Voicemail (incomplete, worth a callback?)';\n\n  const message = [\n    `\ud83d\udcde <b>${esc(headline)}</b>`,\n    `<b>From:</b> ${esc(caller)}${company !== 'not given' ? ' (' + esc(company) + ')' : ''}`,\n    `<b>Callback:</b> ${esc(callback)}`,\n    `<b>About:</b> ${esc(reason)}`,\n    `<b>Urgent:</b> ${esc(urgency)} \u00b7 <b>Length:</b> ${secs}s \u00b7 ${esc(started)}`,\n    '',\n    esc(summary),\n  ].join('\\n');\n\n  out.push({ json: { conversation_id: d.conversation_id ?? 'unknown', outcome, message } });\n}\n\nreturn out;"
+      },
+      "id": "a1f0c5d2-0002-4b6e-9a10-000000000002",
+      "name": "Tidy call details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "logic": "removeItemsWithAlreadySeenKeyValues",
+        "dedupeValue": "={{ $json.conversation_id }}",
+        "options": {
+          "historySize": 10000
+        }
+      },
+      "id": "a1f0c5d2-0003-4b6e-9a10-000000000003",
+      "name": "Skip repeat deliveries",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "REPLACE_WITH_TEST_CHAT_ID",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "a1f0c5d2-0004-4b6e-9a10-000000000004",
+      "name": "Send to Telegram (test chat)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "REPLACE_WITH_TEST_CHAT_ID",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "appendAttribution": false,
+          "caption": "={{ 'Recording: ' + $('Skip repeat deliveries').item.json.conversation_id }}"
+        }
+      },
+      "id": "a1f0c5d2-0007-4b6e-9a10-000000000007",
+      "name": "Send recording to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.elevenlabs.io/v1/convai/conversations/' + $('Skip repeat deliveries').item.json.conversation_id + '/audio' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "id": "a1f0c5d2-0008-4b6e-9a10-000000000008",
+      "name": "Fetch recording from ElevenLabs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    }
+  ],
+  "connections": {
+    "Voicemail webhook (from relay)": {
+      "main": [
+        [
+          {
+            "node": "Tidy call details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tidy call details": {
+      "main": [
+        [
+          {
+            "node": "Skip repeat deliveries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip repeat deliveries": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram (test chat)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Telegram (test chat)": {
+      "main": [
+        [
+          {
+            "node": "Fetch recording from ElevenLabs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch recording from ElevenLabs": {
+      "main": [
+        [
+          {
+            "node": "Send recording to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none"
+  }
+}

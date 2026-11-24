@@ -1,0 +1,45 @@
+{
+  "type": "post_call_transcription",
+  "event_timestamp": 1795452400,
+  "data": {
+    "agent_id": "agent_demo_inbound",
+    "conversation_id": "conv_demo_0002",
+    "status": "done",
+    "metadata": {
+      "start_time_unix_secs": 1795452350,
+      "call_duration_secs": 29
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "message": "Hi, you've reached the voicemail. Please leave your message.",
+        "time_in_call_secs": 0
+      },
+      {
+        "role": "user",
+        "message": "Hi, it's Sam here, about the <booking> for Friday & I'll try again later.",
+        "time_in_call_secs": 5
+      }
+    ],
+    "analysis": {
+      "call_successful": "failure",
+      "transcript_summary": "Sam left a short message about a booking and hung up before giving a surname or callback number.",
+      "data_collection_results": {
+        "caller_name": {
+          "value": "Sam"
+        },
+        "company": {},
+        "callback_number": {},
+        "reason": {
+          "value": "Question about a <booking> & Friday"
+        },
+        "urgency": {
+          "value": "no"
+        },
+        "outcome": {
+          "value": "incomplete"
+        }
+      }
+    }
+  }
+}

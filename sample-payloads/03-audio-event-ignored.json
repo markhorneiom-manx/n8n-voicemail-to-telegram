@@ -1,0 +1,9 @@
+{
+  "type": "post_call_audio",
+  "event_timestamp": 1795452305,
+  "data": {
+    "agent_id": "agent_demo_inbound",
+    "conversation_id": "conv_demo_0001",
+    "full_audio": "BASE64_AUDIO_OMITTED"
+  }
+}

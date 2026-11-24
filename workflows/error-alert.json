@@ -1,0 +1,50 @@
+{
+  "name": "Voicemail demo - error alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b2e1d6c3-0001-4c7f-8b21-000000000001",
+      "name": "Any workflow error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "REPLACE_WITH_TEST_CHAT_ID",
+        "text": "=⚠️ <b>Workflow failed:</b> {{ String($json.workflow.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}\nStopped at: {{ String($json.execution.lastNodeExecuted).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}\nError: {{ String($json.execution.error.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}\nRun: {{ String($json.execution.id).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "b2e1d6c3-0002-4c7f-8b21-000000000002",
+      "name": "Alert on Telegram (test chat)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Any workflow error": {
+      "main": [
+        [
+          {
+            "node": "Alert on Telegram (test chat)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

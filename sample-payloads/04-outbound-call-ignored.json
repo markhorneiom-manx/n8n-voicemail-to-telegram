@@ -1,0 +1,43 @@
+{
+  "type": "post_call_transcription",
+  "event_timestamp": 1795452300,
+  "data": {
+    "agent_id": "agent_demo_outbound",
+    "conversation_id": "conv_demo_0003",
+    "status": "done",
+    "metadata": {
+      "start_time_unix_secs": 1795452219,
+      "call_duration_secs": 47,
+      "phone_call": {
+        "direction": "outbound"
+      }
+    },
+    "transcript": [
+      {
+        "role": "agent",
+        "message": "Hi, you've reached the voicemail. Please leave your message.",
+        "time_in_call_secs": 0
+      },
+      {
+        "role": "user",
+        "message": "Hi, it's Alex Sample from Example Joinery. I'd like a quote for fitting a kitchen, and could someone ring me back?",
+        "time_in_call_secs": 6
+      },
+      {
+        "role": "agent",
+        "message": "And the best number to call you back on?",
+        "time_in_call_secs": 14
+      },
+      {
+        "role": "user",
+        "message": "07700 900123. Any time this week.",
+        "time_in_call_secs": 18
+      }
+    ],
+    "analysis": {
+      "call_successful": "success",
+      "transcript_summary": "Alex Sample from Example Joinery asked for a quote on fitting a kitchen and wants a callback this week.",
+      "data_collection_results": {}
+    }
+  }
+}
